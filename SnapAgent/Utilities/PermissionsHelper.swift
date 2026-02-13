@@ -41,14 +41,11 @@ enum PermissionsHelper {
         CGPreflightScreenCaptureAccess()
     }
 
-    /// Request Screen Recording permission, falling back to System Settings
+    /// Request Screen Recording permission via the system dialog
+    /// The system dialog includes its own "Open System Settings" button as a fallback.
     @discardableResult
     static func requestScreenRecording() -> Bool {
-        let granted = CGRequestScreenCaptureAccess()
-        if !granted {
-            openScreenRecordingSettings()
-        }
-        return granted
+        CGRequestScreenCaptureAccess()
     }
 
     /// Open System Settings to the Screen Recording pane
