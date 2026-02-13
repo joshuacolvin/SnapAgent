@@ -10,12 +10,10 @@ enum PermissionsHelper {
         AXIsProcessTrusted()
     }
 
-    /// Prompt the user for Accessibility permission
-    /// Tries the system dialog first, falls back to opening System Settings
+    /// Request Accessibility permission by opening System Settings directly
     @discardableResult
     static func requestAccessibility() -> Bool {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        let trusted = AXIsProcessTrustedWithOptions(options)
+        let trusted = AXIsProcessTrusted()
         if !trusted {
             openAccessibilitySettings()
         }
@@ -43,9 +41,27 @@ enum PermissionsHelper {
         CGPreflightScreenCaptureAccess()
     }
 
-    /// Request Screen Recording permission (opens System Settings)
+    /// Request Screen Recording permission, falling back to System Settings
     @discardableResult
     static func requestScreenRecording() -> Bool {
-        CGRequestScreenCaptureAccess()
+        let granted = CGRequestScreenCaptureAccess()
+        if !granted {
+            openScreenRecordingSettings()
+        }
+        return granted
+    }
+
+    /// Open System Settings to the Screen Recording pane
+    static func openScreenRecordingSettings() {
+        let urls = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture"
+        ]
+        for urlString in urls {
+            if let url = URL(string: urlString), NSWorkspace.shared.open(url) {
+                return
+            }
+        }
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
     }
 }

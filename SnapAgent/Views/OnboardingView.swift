@@ -102,8 +102,16 @@ struct OnboardingView: View {
                 let accessibility = PermissionsHelper.isAccessibilityGranted
                 let screenRecording = PermissionsHelper.isScreenRecordingGranted
                 await MainActor.run {
+                    let newlyGranted = (!hasAccessibility && accessibility) || (!hasScreenRecording && screenRecording)
                     hasAccessibility = accessibility
                     hasScreenRecording = screenRecording
+                    if newlyGranted {
+                        if #available(macOS 14.0, *) {
+                            NSApp.activate()
+                        } else {
+                            NSApp.activate(ignoringOtherApps: true)
+                        }
+                    }
                 }
                 if accessibility && screenRecording { break }
             }
