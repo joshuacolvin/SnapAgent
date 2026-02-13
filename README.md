@@ -33,6 +33,7 @@ open SnapAgent.xcodeproj
 | Script | Description |
 |---|---|
 | `scripts/release.sh` | Full release: bump version, build, sign, notarize, DMG, GitHub release, deploy site |
+| `scripts/cleanup.sh` | Remove app, settings, and data for a clean reinstall |
 | `scripts/deploy-site.sh` | Deploy the landing page to Cloudflare Pages |
 | `scripts/build-app.sh` | Build the app locally |
 | `scripts/create-dmg-bg.py` | Generate the DMG background image |
