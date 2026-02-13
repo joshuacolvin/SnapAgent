@@ -18,9 +18,6 @@ class InjectionManager {
         "dev.warp.Warp-Stable",
         "com.mitchellh.ghostty",
         "co.zeit.hyper",
-        "com.github.wez.wezterm",
-        "net.kovidgoyal.kitty",
-        "io.alacritty",
         "com.microsoft.VSCode",
         "com.todesktop.230313mzl4w4u92",  // Cursor
     ]
