@@ -151,6 +151,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // Check screen recording permission
+        if !PermissionsHelper.isScreenRecordingGranted {
+            PermissionsHelper.requestScreenRecording()
+            return
+        }
+
         // Save frontmost app as fallback paste target
         injectionManager.saveAppAtCaptureTime()
 

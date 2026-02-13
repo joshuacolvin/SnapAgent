@@ -10,6 +10,7 @@ struct PanelView: View {
 
     @State private var showSettings = false
     @State private var hasAccessibility = PermissionsHelper.isAccessibilityGranted
+    @State private var hasScreenRecording = PermissionsHelper.isScreenRecordingGranted
     @State private var permissionTimer: Timer?
 
     private let columns = [
@@ -24,9 +25,9 @@ struct PanelView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 14)
 
-            // Permission banner
-            if !hasAccessibility {
-                permissionBanner
+            // Permission banners
+            if !hasAccessibility || !hasScreenRecording {
+                permissionBanners
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
@@ -47,11 +48,18 @@ struct PanelView: View {
         .frame(minWidth: 500, idealWidth: 540, minHeight: 420, idealHeight: 520)
         .onAppear {
             hasAccessibility = PermissionsHelper.isAccessibilityGranted
-            if !hasAccessibility {
+            hasScreenRecording = PermissionsHelper.isScreenRecordingGranted
+            if !hasAccessibility || !hasScreenRecording {
                 permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
-                    let granted = PermissionsHelper.isAccessibilityGranted
-                    if granted {
-                        withAnimation { hasAccessibility = true }
+                    let accessibility = PermissionsHelper.isAccessibilityGranted
+                    let screenRecording = PermissionsHelper.isScreenRecordingGranted
+                    if accessibility != hasAccessibility || screenRecording != hasScreenRecording {
+                        withAnimation {
+                            hasAccessibility = accessibility
+                            hasScreenRecording = screenRecording
+                        }
+                    }
+                    if accessibility && screenRecording {
                         permissionTimer?.invalidate()
                         permissionTimer = nil
                     }
@@ -84,21 +92,38 @@ struct PanelView: View {
         }
     }
 
-    // MARK: - Permission Banner
+    // MARK: - Permission Banners
 
-    private var permissionBanner: some View {
+    private var permissionBanners: some View {
+        VStack(spacing: 0) {
+            if !hasAccessibility {
+                permissionBannerRow(
+                    text: "Accessibility permission required for auto-paste",
+                    action: { PermissionsHelper.requestAccessibility() }
+                )
+            }
+            if !hasScreenRecording {
+                permissionBannerRow(
+                    text: "Screen Recording permission required for capture",
+                    action: { PermissionsHelper.requestScreenRecording() }
+                )
+            }
+        }
+    }
+
+    private func permissionBannerRow(text: String, action: @escaping () -> Void) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 14))
                 .foregroundStyle(.orange)
 
-            Text("Accessibility permission required for auto-paste")
+            Text(text)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Spacer()
 
-            Button(action: { PermissionsHelper.requestAccessibility() }) {
+            Button(action: action) {
                 Text("Grant Access")
                     .font(.system(size: 11, weight: .semibold))
             }

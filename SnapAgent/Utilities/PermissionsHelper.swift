@@ -3,6 +3,8 @@ import AppKit
 import ApplicationServices
 
 enum PermissionsHelper {
+    // MARK: - Accessibility
+
     /// Check if the app has Accessibility permission
     static var isAccessibilityGranted: Bool {
         AXIsProcessTrusted()
@@ -31,7 +33,19 @@ enum PermissionsHelper {
                 return
             }
         }
-        // Last resort: open System Settings app directly
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
+    }
+
+    // MARK: - Screen Recording
+
+    /// Check if the app has Screen Recording permission
+    static var isScreenRecordingGranted: Bool {
+        CGPreflightScreenCaptureAccess()
+    }
+
+    /// Request Screen Recording permission (opens System Settings)
+    @discardableResult
+    static func requestScreenRecording() -> Bool {
+        CGRequestScreenCaptureAccess()
     }
 }

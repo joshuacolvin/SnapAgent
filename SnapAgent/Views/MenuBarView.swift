@@ -10,6 +10,7 @@ struct MenuBarView: View {
 
     @State private var showSettings = false
     @State private var hasAccessibility = PermissionsHelper.isAccessibilityGranted
+    @State private var hasScreenRecording = PermissionsHelper.isScreenRecordingGranted
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,27 +26,20 @@ struct MenuBarView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
 
-            // Permission banner
+            // Permission banners
             if !hasAccessibility {
                 Divider()
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 12))
-                    Text("Accessibility permission needed for auto-paste")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Button("Grant") {
-                        PermissionsHelper.requestAccessibility()
-                    }
-                    .font(.system(size: 11))
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.orange.opacity(0.08))
+                menuBarPermissionBanner(
+                    text: "Accessibility permission needed for auto-paste",
+                    action: { PermissionsHelper.requestAccessibility() }
+                )
+            }
+            if !hasScreenRecording {
+                Divider()
+                menuBarPermissionBanner(
+                    text: "Screen Recording permission needed for capture",
+                    action: { PermissionsHelper.requestScreenRecording() }
+                )
             }
 
             Divider()
@@ -144,10 +138,32 @@ struct MenuBarView: View {
         .frame(width: 320)
         .onAppear {
             hasAccessibility = PermissionsHelper.isAccessibilityGranted
+            hasScreenRecording = PermissionsHelper.isScreenRecordingGranted
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(hotkeyManager: hotkeyManager, cleanupManager: cleanupManager)
         }
+    }
+
+    private func menuBarPermissionBanner(text: String, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+                .font(.system(size: 12))
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            Spacer()
+            Button("Grant") {
+                action()
+            }
+            .font(.system(size: 11))
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.orange.opacity(0.08))
     }
 
     private func copyPath(_ screenshot: Screenshot) {
