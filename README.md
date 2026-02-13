@@ -32,26 +32,32 @@ open SnapAgent.xcodeproj
 
 | Script | Description |
 |---|---|
-| `scripts/release.sh` | Build, sign, notarize, and package the DMG for distribution |
+| `scripts/release.sh` | Full release: bump version, build, sign, notarize, DMG, GitHub release, deploy site |
 | `scripts/deploy-site.sh` | Deploy the landing page to Cloudflare Pages |
 | `scripts/build-app.sh` | Build the app locally |
 | `scripts/create-dmg-bg.py` | Generate the DMG background image |
 
 ## Releasing a new version
 
-1. Bump the version in Xcode (MARKETING_VERSION in project settings)
-2. Run the release script to build the DMG:
-   ```bash
-   ./scripts/release.sh
-   ```
-3. Create a GitHub release with the DMG:
-   ```bash
-   gh release create v1.x.x build/SnapAgent.dmg --title "SnapAgent v1.x.x" --notes "Release notes here"
-   ```
-4. Update the version number in `docs/index.html` if needed
-5. Deploy the site:
-   ```bash
-   ./scripts/deploy-site.sh
-   ```
+```bash
+./scripts/release.sh 1.2.0
+```
+
+This single command handles everything:
+1. Bumps `MARKETING_VERSION` in the Xcode project
+2. Updates the version on the landing page
+3. Builds, signs, and notarizes the app
+4. Creates the styled DMG with drag-to-install
+5. Commits the version bump, tags, and pushes
+6. Creates a GitHub release with the DMG attached
+7. Deploys the site to Cloudflare Pages
 
 The download links on the site point to `/releases/latest/download/SnapAgent.dmg`, so they automatically serve the newest release.
+
+### Prerequisites
+
+- Developer ID certificate (`security find-identity -v -p codesigning`)
+- Notarization credentials (`xcrun notarytool store-credentials "SnapAgent"`)
+- [gh](https://cli.github.com/) CLI (authenticated)
+- [wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI (authenticated)
+- [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install create-dmg`)

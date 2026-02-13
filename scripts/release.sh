@@ -3,8 +3,31 @@ set -euo pipefail
 
 # ============================================================
 # SnapAgent Release Script
-# Builds, signs, notarizes, and packages SnapAgent for distribution
+# Bumps version, builds, signs, notarizes, packages DMG,
+# creates GitHub release, and deploys the site.
+#
+# Usage: ./scripts/release.sh <version>
+# Example: ./scripts/release.sh 1.1.0
 # ============================================================
+
+# --- Parse version argument ---
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <version>"
+    echo "Example: $0 1.1.0"
+    exit 1
+fi
+
+VERSION="$1"
+
+# Strip leading 'v' if provided (e.g., v1.1.0 -> 1.1.0)
+VERSION="${VERSION#v}"
+
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "ERROR: Version must be in semver format (e.g., 1.1.0)"
+    exit 1
+fi
+
+TAG="v$VERSION"
 
 # --- Configuration ---
 APP_NAME="SnapAgent"
@@ -12,27 +35,80 @@ SCHEME="SnapAgent"
 PROJECT="SnapAgent.xcodeproj"
 TEAM_ID="KHJAQ8BCGD"
 BUNDLE_ID="com.joshuacolvin.SnapAgent"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$SCRIPT_DIR/.."
 
 # Output directories
-BUILD_DIR="$(pwd)/build"
+BUILD_DIR="$ROOT_DIR/build"
 ARCHIVE_PATH="$BUILD_DIR/$APP_NAME.xcarchive"
 EXPORT_DIR="$BUILD_DIR/export"
 DMG_PATH="$BUILD_DIR/$APP_NAME.dmg"
 
+cd "$ROOT_DIR"
+
+echo ""
+echo "============================================================"
+echo "  Releasing $APP_NAME $TAG"
+echo "============================================================"
+echo ""
+
 # --- Pre-flight checks ---
-echo "==> Checking for Developer ID certificate..."
+echo "==> Running pre-flight checks..."
+
 if ! security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
     echo "ERROR: No 'Developer ID Application' certificate found."
     echo "Install one from https://developer.apple.com/account/resources/certificates"
     exit 1
 fi
 
+if ! command -v gh &> /dev/null; then
+    echo "ERROR: gh CLI not found. Install with: brew install gh"
+    exit 1
+fi
+
+if ! command -v wrangler &> /dev/null; then
+    echo "ERROR: wrangler CLI not found. Install with: npm install -g wrangler"
+    exit 1
+fi
+
+if ! command -v create-dmg &> /dev/null; then
+    echo "ERROR: create-dmg not found. Install with: brew install create-dmg"
+    exit 1
+fi
+
+if [ -n "$(git status --porcelain)" ]; then
+    echo "ERROR: Working directory is not clean. Commit or stash changes first."
+    exit 1
+fi
+
+if git rev-parse "$TAG" > /dev/null 2>&1; then
+    echo "ERROR: Tag $TAG already exists."
+    exit 1
+fi
+
+echo "    All checks passed."
+
+# --- Bump version ---
+echo ""
+echo "==> Bumping version to $VERSION..."
+
+# Update Xcode project (both Debug and Release configurations)
+sed -i '' "s/MARKETING_VERSION = [0-9]*\.[0-9]*\.[0-9]*/MARKETING_VERSION = $VERSION/g" "$PROJECT/project.pbxproj"
+
+# Update landing page
+sed -i '' "s/v[0-9]*\.[0-9]*\.[0-9]*/v$VERSION/g" docs/index.html
+
+echo "    Updated $PROJECT/project.pbxproj"
+echo "    Updated docs/index.html"
+
 # --- Clean build directory ---
+echo ""
 echo "==> Cleaning build directory..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 # --- Archive ---
+echo ""
 echo "==> Archiving $APP_NAME..."
 xcodebuild archive \
     -project "$PROJECT" \
@@ -42,10 +118,11 @@ xcodebuild archive \
     -archivePath "$ARCHIVE_PATH" \
     | tail -5
 
-echo "==> Archive created at $ARCHIVE_PATH"
+echo "    Archive created at $ARCHIVE_PATH"
 
 # --- Export ---
-echo "==> Creating export options..."
+echo ""
+echo "==> Exporting app..."
 cat > "$BUILD_DIR/ExportOptions.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -61,7 +138,6 @@ cat > "$BUILD_DIR/ExportOptions.plist" <<PLIST
 </plist>
 PLIST
 
-echo "==> Exporting app..."
 xcodebuild -exportArchive \
     -archivePath "$ARCHIVE_PATH" \
     -exportPath "$EXPORT_DIR" \
@@ -69,16 +145,14 @@ xcodebuild -exportArchive \
     | tail -5
 
 APP_PATH="$EXPORT_DIR/$APP_NAME.app"
-echo "==> Exported to $APP_PATH"
+echo "    Exported to $APP_PATH"
 
-# --- Notarize ---
 # --- Notarize ---
 KEYCHAIN_PROFILE="SnapAgent"
 
 echo ""
 echo "==> Notarizing $APP_NAME..."
 
-# Check if keychain profile exists
 if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" > /dev/null 2>&1; then
     echo ""
     echo "ERROR: No keychain profile '$KEYCHAIN_PROFILE' found."
@@ -88,30 +162,25 @@ if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" > /dev/null
     echo "    --apple-id \"your@email.com\" \\"
     echo "    --team-id \"$TEAM_ID\" \\"
     echo "    --password \"your-app-specific-password\""
-    echo ""
-    echo "Skipping notarization. App is at: $APP_PATH"
-    exit 0
+    exit 1
 fi
 
-# Create zip for notarization
-echo "==> Creating zip for notarization..."
+echo "    Creating zip for notarization..."
 ditto -c -k --keepParent "$APP_PATH" "$BUILD_DIR/$APP_NAME.zip"
 
-# Submit for notarization
-echo "==> Submitting to Apple..."
+echo "    Submitting to Apple..."
 xcrun notarytool submit "$BUILD_DIR/$APP_NAME.zip" \
     --keychain-profile "$KEYCHAIN_PROFILE" \
     --wait
 
-# Staple the ticket
-echo "==> Stapling notarization ticket..."
+echo "    Stapling notarization ticket..."
 xcrun stapler staple "$APP_PATH"
 
 # --- Create styled DMG ---
-echo "==> Generating DMG background..."
-python3 "$(dirname "$0")/create-dmg-bg.py"
-
+echo ""
 echo "==> Creating DMG..."
+python3 "$SCRIPT_DIR/create-dmg-bg.py"
+
 rm -f "$DMG_PATH"
 create-dmg \
     --volname "$APP_NAME" \
@@ -125,8 +194,40 @@ create-dmg \
     "$DMG_PATH" \
     "$APP_PATH"
 
+echo "    DMG created at $DMG_PATH"
+
+# --- Commit, tag, and push ---
+echo ""
+echo "==> Committing version bump and pushing..."
+git add "$PROJECT/project.pbxproj" docs/index.html
+git commit -m "Bump version to $VERSION"
+git tag "$TAG"
+git push origin main
+git push origin "$TAG"
+
+# --- GitHub Release ---
+echo ""
+echo "==> Creating GitHub release $TAG..."
+gh release create "$TAG" "$DMG_PATH" \
+    --title "$APP_NAME $TAG" \
+    --notes "## $APP_NAME $TAG
+
+Download **$APP_NAME.dmg** below to install.
+
+Requires macOS 13+. Supports Apple Silicon and Intel."
+
+echo "    Release created: $(gh release view "$TAG" --json url -q .url)"
+
+# --- Deploy site ---
+echo ""
+echo "==> Deploying site to Cloudflare Pages..."
+wrangler pages deploy docs --project-name snapagent --branch main
+
 echo ""
 echo "============================================================"
-echo "  Done! Distribute this file:"
-echo "  $DMG_PATH"
+echo "  Released $APP_NAME $TAG"
+echo ""
+echo "  DMG:     $DMG_PATH"
+echo "  Release: https://github.com/joshuacolvin/SnapAgent/releases/tag/$TAG"
+echo "  Site:    https://snapagent.baxlylabs.com"
 echo "============================================================"
