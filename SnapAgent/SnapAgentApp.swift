@@ -130,7 +130,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showOnboarding() {
-        let onboardingView = OnboardingView()
+        let onboardingView = OnboardingView { [weak self] in
+            self?.onboardingWindow?.close()
+            self?.onboardingWindow = nil
+            self?.showPanel()
+        }
         let hostingController = NSHostingController(rootView: onboardingView)
 
         let window = NSWindow(contentViewController: hostingController)

@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @Environment(\.dismiss) private var dismiss
+    var onComplete: () -> Void = {}
+
     @State private var hasAccessibility = PermissionsHelper.isAccessibilityGranted
     @State private var hasScreenRecording = PermissionsHelper.isScreenRecordingGranted
 
@@ -49,13 +50,13 @@ struct OnboardingView: View {
             if allGranted {
                 Button("Get Started") {
                     markOnboardingComplete()
-                    dismiss()
+                    onComplete()
                 }
                 .buttonStyle(.borderedProminent)
             } else {
                 Button("Continue Without Permissions") {
                     markOnboardingComplete()
-                    dismiss()
+                    onComplete()
                 }
                 .buttonStyle(.bordered)
             }
