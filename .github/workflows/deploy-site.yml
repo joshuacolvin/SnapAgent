@@ -3,7 +3,7 @@ name: Deploy Site
 on:
   push:
     branches: [main]
-    paths: [docs/**]
+    paths: [docs/**, .github/workflows/deploy-site.yml]
 
 jobs:
   deploy:
