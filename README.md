@@ -1,8 +1,12 @@
 # SnapAgent
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A lightweight macOS menu bar app that captures screenshots and injects file paths directly into your terminal. Built for developers who work with AI coding tools.
 
 **Website:** [snapagent.baxlylabs.com](https://snapagent.baxlylabs.com)
+
+![SnapAgent Demo](demo.gif)
 
 ## What it does
 
@@ -11,14 +15,33 @@ A lightweight macOS menu bar app that captures screenshots and injects file path
 3. The file path is automatically pasted into your last active terminal
 4. Old screenshots are auto-cleaned so they don't pile up
 
+## Keyboard shortcuts
+
+| Action | Default shortcut |
+|---|---|
+| Region capture | ⌘⇧A |
+| Full screen capture | ⌘⇧S |
+
+Shortcuts are customizable in Settings.
+
+## Features
+
+- **Auto-paste to terminal** — copies the file path and pastes it into your last active terminal in one step
+- **Auto-cleanup** — deletes old screenshots after a configurable interval (default: 24 hours)
+- **Customizable hotkeys** — change capture shortcuts to whatever you prefer
+- **Multiple image formats** — save as PNG or JPEG
+- **Works with major terminals** — Terminal, iTerm2, Warp, Ghostty, VS Code, Cursor, Hyper
+
+![Settings](settings.png)
+
+## Permissions
+
+SnapAgent requests Screen Recording and Accessibility access on first launch. Screen Recording is needed to capture screenshots. Accessibility is needed to paste file paths into your terminal.
+
 ## Requirements
 
 - macOS 13+
 - Apple Silicon or Intel
-
-## Supported terminals
-
-Terminal, iTerm2, Warp, Ghostty, VS Code, Cursor, Kitty, Alacritty, Hyper, WezTerm
 
 ## Development
 
