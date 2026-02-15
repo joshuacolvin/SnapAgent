@@ -8,6 +8,10 @@ A lightweight macOS menu bar app that captures screenshots and injects file path
 
 ![SnapAgent Demo](demo.gif)
 
+## Download
+
+[Download the latest release](https://github.com/joshuacolvin/SnapAgent/releases/latest/download/SnapAgent.dmg) — open the DMG and drag SnapAgent to Applications.
+
 ## What it does
 
 1. Hit a hotkey to capture a screenshot (region or full screen)
