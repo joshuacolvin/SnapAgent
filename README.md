@@ -28,6 +28,10 @@ A lightweight macOS menu bar app that captures screenshots and injects file path
 
 Shortcuts are customizable in Settings.
 
+## Compatibility note
+
+SnapAgent works with **terminal-based AI workflows** — tools like Claude Code, Codex CLI, and Copilot in the terminal. It is not compatible with desktop chat apps like Claude Desktop, ChatGPT, or other GUI-based AI clients.
+
 ## Features
 
 - **Auto-paste to terminal** — copies the file path and pastes it into your last active terminal in one step
