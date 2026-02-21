@@ -30,7 +30,7 @@ Shortcuts are customizable in Settings.
 
 ## Compatibility note
 
-SnapAgent works with **terminal-based AI workflows** — tools like Claude Code, Codex CLI, and Copilot in the terminal. It is not compatible with desktop chat apps like Claude Desktop, ChatGPT, or other GUI-based AI clients.
+SnapAgent works with **terminal-based AI workflows** — tools like Claude Code, Codex CLI, and Copilot in the terminal. It is not compatible with desktop chat apps like Claude Desktop, Codex, or other GUI-based AI clients.
 
 ## Features
 
